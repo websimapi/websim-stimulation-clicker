@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stimulation Clicker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        
+        .main-game {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .click-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .click-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+        
+        .click-button:active {
+            transform: scale(0.95);
+        }
+        
+        .stats {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        
+        .upgrade {
+            background: rgba(255, 255, 255, 0.2);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .upgrade:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .upgrade.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .email-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .email-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .email {
+            background: rgba(255, 255, 255, 0.2);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .email.unread {
+            background: rgba(255, 255, 100, 0.3);
+            font-weight: bold;
+        }
+        
+        .email-compose {
+            margin: 10px 0;
+        }
+        
+        .email-compose input, .email-compose textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .email-compose button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .floating-text {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+        
+        .players-list {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .player {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .player img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-game">
+            <h1>🧠 Stimulation Clicker</h1>
+            <div class="stats">
+                <div>Stimulation Points: <span id="points">0</span></div>
+                <div>Points per Click: <span id="perClick">1</span></div>
+                <div>Points per Second: <span id="perSecond">0</span></div>
+            </div>
+            <button class="click-button" id="clickButton">
+                CLICK ME
+            </button>
+            <div id="clickEffect"></div>
+        </div>
+        
+        <div class="sidebar">
+            <h3>🛒 Upgrades</h3>
+            <div id="upgrades"></div>
+            
+            <div class="email-section" id="emailSection">
+                <h3>📧 Email System</h3>
+                <div class="email-compose">
+                    <input type="text" id="emailTo" placeholder="Send to (username or 'AI')">
+                    <textarea id="emailContent" placeholder="Write your message..." rows="3"></textarea>
+                    <button onclick="sendEmail()">Send Email</button>
+                </div>
+                <div class="email-list" id="emailList"></div>
+            </div>
+            
+            <div class="players-list">
+                <h3>👥 Online Players</h3>
+                <div id="playersList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            points: 0,
+            pointsPerClick: 1,
+            pointsPerSecond: 0,
+            upgrades: {},
+            emails: [],
+            hasEmailUpgrade: false
+        };
+
+        // Multiplayer setup
+        const room = new WebsimSocket();
+        let isInitialized = false;
+
+        // Upgrade definitions
+        const upgradeDefinitions = [
+            {
+                id: 'clickPower',
+                name: '💪 Click Power',
+                description: 'Increases click power',
+                baseCost: 10,
+                costMultiplier: 1.5,
+                effect: () => gameState.pointsPerClick += 1
+            },
+            {
+                id: 'autoClicker',
+                name: '🤖 Auto Clicker',
+                description: 'Automatically clicks for you',
+                baseCost: 50,
+                costMultiplier: 2,
+                effect: () => gameState.pointsPerSecond += 1
+            },
+            {
+                id: 'stimulationBoost',
+                name: '⚡ Stimulation Boost',
+                description: 'AI-powered stimulation enhancement',
+                baseCost: 100,
+                costMultiplier: 2.5,
+                effect: async () => {
+                    const boost = await getAIStimulationBoost();
+                    gameState.pointsPerClick += boost.clickBonus;
+                    gameState.pointsPerSecond += boost.autoBonus;
+                    showFloatingText(`+${boost.clickBonus} click power! +${boost.autoBonus} auto!`);
+                }
+            },
+            {
+                id: 'email',
+                name: '📧 Email System',
+                description: 'Unlock email communication with other players and AI entities',
+                baseCost: 200,
+                costMultiplier: 1,
+                maxLevel: 1,
+                effect: () => {
+                    gameState.hasEmailUpgrade = true;
+                    document.getElementById('emailSection').style.display = 'block';
+                    startEmailSystem();
+                }
+            },
+            {
+                id: 'socialNetwork',
+                name: '🌐 Social Network',
+                description: 'Connect with AI influencers and thought leaders',
+                baseCost: 500,
+                costMultiplier: 3,
+                effect: async () => {
+                    await addAIContact();
+                }
+            }
+        ];
+
+        async function initGame() {
+            try {
+                await room.initialize();
+                isInitialized = true;
+                
+                // Initialize player presence
+                room.updatePresence({
+                    points: gameState.points,
+                    pointsPerClick: gameState.pointsPerClick,
+                    pointsPerSecond: gameState.pointsPerSecond,
+                    lastActive: Date.now()
+                });
+
+                // Listen for email messages
+                room.onmessage = (event) => {
+                    const data = event.data;
+                    switch (data.type) {
+                        case "email":
+                            receiveEmail(data.from, data.content, data.fromAI);
+                            break;
+                        case "connected":
+                            updatePlayersList();
+                            break;
+                        case "disconnected":
+                            updatePlayersList();
+                            break;
+                    }
+                };
+
+                room.subscribePresence(() => {
+                    updatePlayersList();
+                });
+
+                // Start AI bots
+                setTimeout(() => {
+                    startAIBots();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Failed to initialize multiplayer:', error);
+            }
+
+            setupGame();
+        }
+
+        function setupGame() {
+            const clickButton = document.getElementById('clickButton');
+            clickButton.addEventListener('click', handleClick);
+            
+            renderUpgrades();
+            updateDisplay();
+            
+            // Auto-increment timer
+            setInterval(() => {
+                if (gameState.pointsPerSecond > 0) {
+                    gameState.points += gameState.pointsPerSecond;
+                    updateDisplay();
+                    updatePresence();
+                }
+            }, 1000);
+        }
+
+        function handleClick(event) {
+            gameState.points += gameState.pointsPerClick;
+            
+            // Visual feedback
+            const rect = event.target.getBoundingClientRect();
+            showFloatingText(`+${gameState.pointsPerClick}`, 
+                rect.left + rect.width/2, 
+                rect.top + rect.height/2);
+            
+            updateDisplay();
+            updatePresence();
+        }
+
+        function showFloatingText(text, x = null, y = null) {
+            const element = document.createElement('div');
+            element.className = 'floating-text';
+            element.textContent = text;
+            
+            if (x === null || y === null) {
+                const clickButton = document.getElementById('clickButton');
+                const rect = clickButton.getBoundingClientRect();
+                x = rect.left + rect.width/2;
+                y = rect.top + rect.height/2;
+            }
+            
+            element.style.left = x + 'px';
+            element.style.top = y + 'px';
+            element.style.animation = 'floatUp 2s ease-out forwards';
+            
+            document.body.appendChild(element);
+            
+            setTimeout(() => {
+                document.body.removeChild(element);
+            }, 2000);
+        }
+
+        function updateDisplay() {
+            document.getElementById('points').textContent = Math.floor(gameState.points);
+            document.getElementById('perClick').textContent = gameState.pointsPerClick;
+            document.getElementById('perSecond').textContent = gameState.pointsPerSecond;
+            renderUpgrades();
+        }
+
+        function updatePresence() {
+            if (isInitialized) {
+                room.updatePresence({
+                    points: Math.floor(gameState.points),
+                    pointsPerClick: gameState.pointsPerClick,
+                    pointsPerSecond: gameState.pointsPerSecond,
+                    lastActive: Date.now()
+                });
+            }
+        }
+
+        function renderUpgrades() {
+            const upgradesContainer = document.getElementById('upgrades');
+            upgradesContainer.innerHTML = '';
+            
+            upgradeDefinitions.forEach(upgrade => {
+                const level = gameState.upgrades[upgrade.id] || 0;
+                const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+                const canAfford = gameState.points >= cost;
+                const maxReached = upgrade.maxLevel && level >= upgrade.maxLevel;
+                
+                const upgradeElement = document.createElement('div');
+                upgradeElement.className = `upgrade ${(!canAfford || maxReached) ? 'disabled' : ''}`;
+                upgradeElement.innerHTML = `
+                    <div><strong>${upgrade.name}</strong> (Level ${level})</div>
+                    <div>${upgrade.description}</div>
+                    <div>${maxReached ? 'MAX LEVEL' : `Cost: ${cost} points`}</div>
+                `;
+                
+                if (canAfford && !maxReached) {
+                    upgradeElement.addEventListener('click', () => buyUpgrade(upgrade.id));
+                }
+                
+                upgradesContainer.appendChild(upgradeElement);
+            });
+        }
+
+        async function buyUpgrade(upgradeId) {
+            const upgrade = upgradeDefinitions.find(u => u.id === upgradeId);
+            const level = gameState.upgrades[upgradeId] || 0;
+            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+            
+            if (gameState.points >= cost && (!upgrade.maxLevel || level < upgrade.maxLevel)) {
+                gameState.points -= cost;
+                gameState.upgrades[upgradeId] = level + 1;
+                
+                await upgrade.effect();
+                updateDisplay();
+                updatePresence();
+            }
+        }
+
+        async function getAIStimulationBoost() {
+            try {
+                const completion = await websim.chat.completions.create({
+                    messages: [
+                        {
+                            role: "system",
+                            content: `You are managing a stimulation clicker game. Generate random positive effects for a "Stimulation Boost" upgrade. Respond with JSON only.
+{
+  "clickBonus": number (1-10),
+  "autoBonus": number (0-5),
+  "flavorText": "exciting description of the boost effect"
+}`
+                        },
+                        {
+                            role: "user",
+                            content: `Generate a stimulation boost effect for a player with ${gameState.pointsPerClick} click power and ${gameState.pointsPerSecond} auto power.`
+                        }
+                    ],
+                    json: true
+                });
+                
+                return JSON.parse(completion.content);
+            } catch (error) {
+                console.error('AI boost failed:', error);
+                return { clickBonus: 2, autoBonus: 1, flavorText: "Neural pathways optimized!" };
+            }
+        }
+
+        // Email system
+        function startEmailSystem() {
+            // Send welcome email from AI
+            setTimeout(() => {
+                receiveEmail("Dr. Stimulation", "Welcome to the Email System! 🎉\n\nI'm Dr. Stimulation, your AI assistant. I'll be sending you tips and updates to help maximize your stimulation potential!\n\nTry sending me a message by typing 'AI' in the recipient field.", true);
+            }, 1000);
+        }
+
+        async function sendEmail() {
+            const to = document.getElementById('emailTo').value;
+            const content = document.getElementById('emailContent').value;
+            
+            if (!to || !content) return;
+            
+            if (to.toLowerCase() === 'ai') {
+                // Send to AI
+                await sendAIEmail(content);
+            } else {
+                // Send to player
+                room.send({
+                    type: "email",
+                    to: to,
+                    content: content,
+                    from: room.peers[room.clientId]?.username || "Anonymous",
+                    echo: false
+                });
+            }
+            
+            document.getElementById('emailTo').value = '';
+            document.getElementById('emailContent').value = '';
+        }
+
+        async function sendAIEmail(content) {
+            try {
+                const completion = await websim.chat.completions.create({
+                    messages: [
+                        {
+                            role: "system",
+                            content: `You are Dr. Stimulation, an AI assistant in a stimulation clicker game. Respond to player emails with enthusiasm and game-related advice. Keep responses under 200 characters. You can offer tips, encouragement, or fun facts about stimulation and productivity.`
+                        },
+                        {
+                            role: "user",
+                            content: content
+                        }
+                    ]
+                });
+                
+                setTimeout(() => {
+                    receiveEmail("Dr. Stimulation", completion.content, true);
+                }, 1000 + Math.random() * 2000);
+                
+            } catch (error) {
+                console.error('AI email failed:', error);
+                receiveEmail("Dr. Stimulation", "Error processing your message. Please try again!", true);
+            }
+        }
+
+        function receiveEmail(from, content, fromAI = false) {
+            const email = {
+                from,
+                content,
+                timestamp: Date.now(),
+                read: false,
+                fromAI
+            };
+            
+            gameState.emails.unshift(email);
+            renderEmails();
+            
+            // Show notification
+            showFloatingText(`📧 New email from ${from}`);
+        }
+
+        function renderEmails() {
+            const emailList = document.getElementById('emailList');
+            emailList.innerHTML = '';
+            
+            gameState.emails.slice(0, 10).forEach((email, index) => {
+                const emailElement = document.createElement('div');
+                emailElement.className = `email ${!email.read ? 'unread' : ''}`;
+                emailElement.innerHTML = `
+                    <div><strong>${email.from}</strong></div>
+                    <div>${email.content}</div>
+                    <div style="font-size: 12px; opacity: 0.7;">${new Date(email.timestamp).toLocaleTimeString()}</div>
+                `;
+                
+                emailElement.addEventListener('click', () => {
+                    email.read = true;
+                    renderEmails();
+                });
+                
+                emailList.appendChild(emailElement);
+            });
+        }
+
+        async function addAIContact() {
+            const aiPersonalities = [
+                "Dr. Neural", "Prof. Dopamine", "Coach Motivation", "Zen Master", "The Optimizer"
+            ];
+            
+            const randomAI = aiPersonalities[Math.floor(Math.random() * aiPersonalities.length)];
+            
+            setTimeout(() => {
+                receiveEmail(randomAI, `Greetings! I've been connected to your social network. Let's explore new dimensions of stimulation together! 🚀`, true);
+            }, 2000);
+        }
+
+        function startAIBots() {
+            // Random AI emails
+            setInterval(async () => {
+                if (gameState.hasEmailUpgrade && Math.random() < 0.3) {
+                    await sendRandomAIEmail();
+                }
+            }, 30000); // Every 30 seconds, 30% chance
+        }
+
+        async function sendRandomAIEmail() {
+            try {
+                const completion = await websim.chat.completions.create({
+                    messages: [
+                        {
+                            role: "system",
+                            content: `Generate a random email for a stimulation clicker game from an AI bot. Include game tips, motivational messages, or fun facts. Keep it under 150 characters. Respond with JSON:
+{
+  "from": "AI name",
+  "content": "email content"
+}`
+                        },
+                        {
+                            role: "user",
+                            content: `Player stats: ${gameState.points} points, ${gameState.pointsPerClick} per click, ${gameState.pointsPerSecond} per second`
+                        }
+                    ],
+                    json: true
+                });
+                
+                const result = JSON.parse(completion.content);
+                receiveEmail(result.from, result.content, true);
+                
+            } catch (error) {
+                console.error('Random AI email failed:', error);
+            }
+        }
+
+        function updatePlayersList() {
+            if (!isInitialized) return;
+            
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '';
+            
+            Object.values(room.peers).forEach(peer => {
+                const presence = room.presence[peer.id] || {};
+                const playerElement = document.createElement('div');
+                playerElement.className = 'player';
+                playerElement.innerHTML = `
+                    <img src="${peer.avatarUrl}" alt="${peer.username}">
+                    <div>
+                        <div>${peer.username}</div>
+                        <div style="font-size: 12px; opacity: 0.7;">${presence.points || 0} points</div>
+                    </div>
+                `;
+                playersList.appendChild(playerElement);
+            });
+        }
+
+        // Initialize the game
+        initGame();
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
