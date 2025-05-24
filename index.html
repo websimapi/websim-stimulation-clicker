@@ -298,22 +298,30 @@
 
                 // Listen for email messages
                 room.onmessage = (event) => {
-                    const data = event.data;
-                    switch (data.type) {
-                        case "email":
-                            receiveEmail(data.from, data.content, data.fromAI);
-                            break;
-                        case "connected":
-                            updatePlayersList();
-                            break;
-                        case "disconnected":
-                            updatePlayersList();
-                            break;
+                    try {
+                        const data = event.data;
+                        switch (data.type) {
+                            case "email":
+                                receiveEmail(data.from, data.content, data.fromAI);
+                                break;
+                            case "connected":
+                                updatePlayersList();
+                                break;
+                            case "disconnected":
+                                updatePlayersList();
+                                break;
+                        }
+                    } catch (error) {
+                        console.error('Error handling message:', error);
                     }
                 };
 
                 room.subscribePresence(() => {
-                    updatePlayersList();
+                    try {
+                        updatePlayersList();
+                    } catch (error) {
+                        console.error('Error updating players list:', error);
+                    }
                 });
 
                 // Start AI bots
@@ -323,6 +331,8 @@
 
             } catch (error) {
                 console.error('Failed to initialize multiplayer:', error);
+                // Continue with single-player mode
+                isInitialized = false;
             }
 
             setupGame();
@@ -390,12 +400,16 @@
 
         function updatePresence() {
             if (isInitialized) {
-                room.updatePresence({
-                    points: Math.floor(gameState.points),
-                    pointsPerClick: gameState.pointsPerClick,
-                    pointsPerSecond: gameState.pointsPerSecond,
-                    lastActive: Date.now()
-                });
+                try {
+                    room.updatePresence({
+                        points: Math.floor(gameState.points),
+                        pointsPerClick: gameState.pointsPerClick,
+                        pointsPerSecond: gameState.pointsPerSecond,
+                        lastActive: Date.now()
+                    });
+                } catch (error) {
+                    console.error('Error updating presence:', error);
+                }
             }
         }
 
@@ -482,22 +496,29 @@
             
             if (!to || !content) return;
             
-            if (to.toLowerCase() === 'ai') {
-                // Send to AI
-                await sendAIEmail(content);
-            } else {
-                // Send to player
-                room.send({
-                    type: "email",
-                    to: to,
-                    content: content,
-                    from: room.peers[room.clientId]?.username || "Anonymous",
-                    echo: false
-                });
+            try {
+                if (to.toLowerCase() === 'ai') {
+                    // Send to AI
+                    await sendAIEmail(content);
+                } else {
+                    // Send to player
+                    if (isInitialized) {
+                        room.send({
+                            type: "email",
+                            to: to,
+                            content: content,
+                            from: room.peers[room.clientId]?.username || "Anonymous",
+                            echo: false
+                        });
+                    }
+                }
+                
+                document.getElementById('emailTo').value = '';
+                document.getElementById('emailContent').value = '';
+            } catch (error) {
+                console.error('Error sending email:', error);
+                showFloatingText('❌ Failed to send email');
             }
-            
-            document.getElementById('emailTo').value = '';
-            document.getElementById('emailContent').value = '';
         }
 
         async function sendAIEmail(content) {
@@ -609,28 +630,36 @@
                 
             } catch (error) {
                 console.error('Random AI email failed:', error);
+                // Fallback message if AI fails
+                if (Math.random() < 0.5) {
+                    receiveEmail("System Bot", "Keep clicking! Your stimulation levels are looking great! 🚀", true);
+                }
             }
         }
 
         function updatePlayersList() {
             if (!isInitialized) return;
             
-            const playersList = document.getElementById('playersList');
-            playersList.innerHTML = '';
-            
-            Object.values(room.peers).forEach(peer => {
-                const presence = room.presence[peer.id] || {};
-                const playerElement = document.createElement('div');
-                playerElement.className = 'player';
-                playerElement.innerHTML = `
-                    <img src="${peer.avatarUrl}" alt="${peer.username}">
-                    <div>
-                        <div>${peer.username}</div>
-                        <div style="font-size: 12px; opacity: 0.7;">${presence.points || 0} points</div>
-                    </div>
-                `;
-                playersList.appendChild(playerElement);
-            });
+            try {
+                const playersList = document.getElementById('playersList');
+                playersList.innerHTML = '';
+                
+                Object.values(room.peers).forEach(peer => {
+                    const presence = room.presence[peer.id] || {};
+                    const playerElement = document.createElement('div');
+                    playerElement.className = 'player';
+                    playerElement.innerHTML = `
+                        <img src="${peer.avatarUrl}" alt="${peer.username}">
+                        <div>
+                            <div>${peer.username}</div>
+                            <div style="font-size: 12px; opacity: 0.7;">${presence.points || 0} points</div>
+                        </div>
+                    `;
+                    playersList.appendChild(playerElement);
+                });
+            } catch (error) {
+                console.error('Error updating players list:', error);
+            }
         }
 
         // Initialize the game
@@ -639,4 +668,3 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
-
