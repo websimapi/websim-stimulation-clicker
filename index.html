@@ -953,13 +953,13 @@
             let emails = [];
             switch (gameState.currentFolder) {
                 case 'inbox':
-                    emails = gameState.emails.filter(e => !e.fromAI);
+                    emails = (gameState.emails || []).filter(e => e && !e.fromAI);
                     break;
                 case 'sent':
-                    emails = gameState.sentEmails;
+                    emails = gameState.sentEmails || [];
                     break;
                 case 'ai':
-                    emails = gameState.emails.filter(e => e.fromAI);
+                    emails = (gameState.emails || []).filter(e => e && e.fromAI);
                     break;
                 case 'spam':
                     emails = []; // No spam for now
@@ -969,20 +969,23 @@
             // Apply search filter
             if (gameState.searchQuery) {
                 emails = emails.filter(e => 
-                    e.subject.toLowerCase().includes(gameState.searchQuery.toLowerCase()) ||
+                    e && e.subject && e.from && e.content &&
+                    (e.subject.toLowerCase().includes(gameState.searchQuery.toLowerCase()) ||
                     e.from.toLowerCase().includes(gameState.searchQuery.toLowerCase()) ||
-                    e.content.toLowerCase().includes(gameState.searchQuery.toLowerCase())
+                    e.content.toLowerCase().includes(gameState.searchQuery.toLowerCase()))
                 );
             }
             
             emails.slice(0, 50).forEach((email, index) => {
+                if (!email || !email.from || !email.subject || !email.content) return;
+                
                 const emailElement = document.createElement('div');
                 emailElement.className = `email-item ${email.read ? 'read' : 'unread'}`;
                 emailElement.onclick = () => openEmail(email);
                 
-                const avatar = email.fromAI ? '' : email.from.charAt(0).toUpperCase();
+                const avatar = email.fromAI ? '🤖' : email.from.charAt(0).toUpperCase();
                 const preview = email.content.length > 50 ? email.content.substring(0, 50) + '...' : email.content;
-                
+
                 emailElement.innerHTML = `
                     <div class="email-avatar">${avatar}</div>
                     <div class="email-content">
@@ -1012,7 +1015,7 @@
             document.getElementById('viewSender').textContent = email.from;
             document.getElementById('viewTime').textContent = new Date(email.timestamp).toLocaleString();
             document.getElementById('viewContent').textContent = email.content;
-            document.getElementById('viewAvatar').textContent = email.fromAI ? '' : email.from.charAt(0).toUpperCase();
+            document.getElementById('viewAvatar').textContent = email.fromAI ? '🤖' : email.from.charAt(0).toUpperCase();
             
             updateEmailCounts();
             renderEmails();
