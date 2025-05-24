@@ -293,6 +293,7 @@
         
         .compose-field {
             margin-bottom: 16px;
+            position: relative;
         }
         
         .compose-field label {
@@ -382,6 +383,51 @@
             border-top: 1px solid #e0e0e0;
             display: flex;
             gap: 12px;
+        }
+        
+        .recipient-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dadce0;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .recipient-option {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .recipient-option:hover {
+            background: #f1f3f4;
+        }
+        
+        .recipient-option:last-child {
+            border-bottom: none;
+        }
+        
+        .recipient-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
         }
         
         .unread-count {
@@ -524,7 +570,9 @@
                     <div class="compose-body">
                         <div class="compose-field">
                             <label>To:</label>
-                            <input type="text" id="composeTo" placeholder="recipient@example.com or 'AI'">
+                            <input type="text" id="composeTo" placeholder="Type to search recipients..." autocomplete="off" 
+                                   onfocus="showRecipientDropdown()" oninput="filterRecipients()" onblur="hideRecipientDropdown()">
+                            <div class="recipient-dropdown" id="recipientDropdown"></div>
                         </div>
                         <div class="compose-field">
                             <label>Subject:</label>
@@ -623,6 +671,8 @@
                 }
             }
         ];
+
+        let selectedRecipient = null;
 
         async function initGame() {
             try {
@@ -844,22 +894,22 @@
             document.getElementById('composeTo').value = '';
             document.getElementById('composeSubject').value = '';
             document.getElementById('composeContent').value = '';
+            selectedRecipient = null;
         }
 
         async function sendEmailFromCompose() {
-            const to = document.getElementById('composeTo').value;
             const subject = document.getElementById('composeSubject').value;
             const content = document.getElementById('composeContent').value;
             
-            if (!to || !subject || !content) {
-                alert('Please fill in all fields');
+            if (!selectedRecipient || !subject || !content) {
+                alert('Please select a valid recipient and fill in all fields');
                 return;
             }
             
             try {
                 // Add to sent folder
                 const sentEmail = {
-                    to,
+                    to: selectedRecipient.displayName,
                     subject,
                     content,
                     timestamp: Date.now(),
@@ -869,7 +919,7 @@
                 };
                 gameState.sentEmails.unshift(sentEmail);
                 
-                if (to.toLowerCase() === 'ai') {
+                if (selectedRecipient.id === 'AI') {
                     // Send to AI
                     await sendAIEmail(subject, content);
                 } else {
@@ -877,20 +927,20 @@
                     if (isInitialized) {
                         room.send({
                             type: "email",
-                            to: to,
+                            to: selectedRecipient.id,
                             subject: subject,
                             content: content,
                             from: room.peers[room.clientId]?.username || "Anonymous",
-                            echo: false
+                            echo: selectedRecipient.id === room.clientId // Include echo if sending to self
                         });
                     }
                 }
                 
                 closeCompose();
-                showFloatingText(' Email sent!');
+                showFloatingText('📧 Email sent!');
             } catch (error) {
                 console.error('Error sending email:', error);
-                showFloatingText(' Failed to send email');
+                showFloatingText('❌ Failed to send email');
             }
         }
 
@@ -1096,24 +1146,79 @@
             return new Date(timestamp).toLocaleDateString();
         }
 
-        room.onmessage = (event) => {
-            try {
-                const data = event.data;
-                switch (data.type) {
-                    case "email":
-                        receiveEmail(data.from, data.subject || "No Subject", data.content, data.fromAI);
-                        break;
-                    case "connected":
-                        updatePlayersList();
-                        break;
-                    case "disconnected":
-                        updatePlayersList();
-                        break;
-                }
-            } catch (error) {
-                console.error('Error handling message:', error);
+        function showRecipientDropdown() {
+            populateRecipients();
+            document.getElementById('recipientDropdown').style.display = 'block';
+        }
+
+        function hideRecipientDropdown() {
+            // Delay hiding to allow clicking on options
+            setTimeout(() => {
+                document.getElementById('recipientDropdown').style.display = 'none';
+            }, 200);
+        }
+
+        function populateRecipients() {
+            const dropdown = document.getElementById('recipientDropdown');
+            const searchQuery = document.getElementById('composeTo').value.toLowerCase();
+            
+            dropdown.innerHTML = '';
+            
+            // Add AI option
+            if ('ai'.includes(searchQuery) || searchQuery === '') {
+                const aiOption = createRecipientOption('AI', '🤖', 'AI Assistant');
+                dropdown.appendChild(aiOption);
             }
-        };
+            
+            // Add connected users
+            if (isInitialized && room.peers) {
+                Object.values(room.peers).forEach(peer => {
+                    const username = peer.username || 'Unknown';
+                    if (username.toLowerCase().includes(searchQuery) || searchQuery === '') {
+                        const option = createRecipientOption(peer.id, peer.avatarUrl, username);
+                        dropdown.appendChild(option);
+                    }
+                });
+            }
+            
+            if (dropdown.children.length === 0) {
+                dropdown.innerHTML = '<div style="padding: 12px; color: #666;">No recipients found</div>';
+            }
+        }
+
+        function createRecipientOption(id, avatar, displayName) {
+            const option = document.createElement('div');
+            option.className = 'recipient-option';
+            option.onmousedown = () => selectRecipient(id, displayName); // Use mousedown to fire before blur
+            
+            const avatarElement = document.createElement('div');
+            avatarElement.className = 'recipient-avatar';
+            
+            if (avatar.startsWith('http')) {
+                avatarElement.innerHTML = `<img src="${avatar}" style="width: 100%; height: 100%; border-radius: 50%;">`;
+            } else {
+                avatarElement.textContent = avatar;
+            }
+            
+            const nameElement = document.createElement('div');
+            nameElement.textContent = displayName;
+            
+            option.appendChild(avatarElement);
+            option.appendChild(nameElement);
+            
+            return option;
+        }
+
+        function selectRecipient(id, displayName) {
+            selectedRecipient = { id, displayName };
+            document.getElementById('composeTo').value = displayName;
+            document.getElementById('recipientDropdown').style.display = 'none';
+        }
+
+        function filterRecipients() {
+            selectedRecipient = null; // Clear selection when typing
+            populateRecipients();
+        }
 
         async function sendRandomAIEmail() {
             try {
