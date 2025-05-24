@@ -693,7 +693,7 @@
                         const data = event.data;
                         switch (data.type) {
                             case "email":
-                                receiveEmail(data.from, data.subject || "No Subject", data.content, data.fromAI);
+                                receiveEmail(data.from, data.subject || "No Subject", data.content, data.fromAI || false);
                                 break;
                             case "connected":
                                 updatePlayersList();
@@ -851,7 +851,7 @@
                     messages: [
                         {
                             role: "system",
-                            content: `You are managing a stimulation clicker game. Generate random positive effects for a "Stimulation Boost" upgrade. Respond with JSON only.
+                            content: `You are managing a stimulation clicker game. Generate random positive effects for a "Stimulation Boost" upgrade. Respond with JSON only:
 {
   "clickBonus": number (1-10),
   "autoBonus": number (0-5),
@@ -860,7 +860,7 @@
                         },
                         {
                             role: "user",
-                            content: `Generate a stimulation boost effect for a player with ${gameState.pointsPerClick} click power and ${gameState.pointsPerSecond} auto power.`
+                            content: `Player stats: ${gameState.points} points, ${gameState.pointsPerClick} per click, ${gameState.pointsPerSecond} per second`
                         }
                     ],
                     json: true
@@ -931,7 +931,8 @@
                             subject: subject,
                             content: content,
                             from: room.peers[room.clientId]?.username || "Anonymous",
-                            echo: selectedRecipient.id === room.clientId // Include echo if sending to self
+                            fromAI: false,
+                            echo: true // Allow receiving your own emails for testing
                         });
                     }
                 }
@@ -981,11 +982,15 @@
             };
             
             gameState.emails.unshift(email);
-            renderEmails();
-            updateEmailCounts();
+            
+            // Force UI update
+            setTimeout(() => {
+                renderEmails();
+                updateEmailCounts();
+            }, 100);
             
             // Show notification
-            showFloatingText(` New email: ${subject}`);
+            showFloatingText(`📧 New email: ${subject}`);
         }
 
         function selectFolder(folder) {
@@ -1033,7 +1038,7 @@
                 emailElement.className = `email-item ${email.read ? 'read' : 'unread'}`;
                 emailElement.onclick = () => openEmail(email);
                 
-                const avatar = email.fromAI ? '🤖' : email.from.charAt(0).toUpperCase();
+                const avatar = email.fromAI ? '🤖' : (email.from.charAt(0) || 'U').toUpperCase();
                 const preview = email.content.length > 50 ? email.content.substring(0, 50) + '...' : email.content;
 
                 emailElement.innerHTML = `
@@ -1119,17 +1124,21 @@
         }
 
         function updateEmailCounts() {
-            const inboxUnread = gameState.emails.filter(e => !e.read && !e.fromAI).length;
-            const aiUnread = gameState.emails.filter(e => !e.read && e.fromAI).length;
+            const inboxUnread = (gameState.emails || []).filter(e => e && !e.read && !e.fromAI).length;
+            const aiUnread = (gameState.emails || []).filter(e => e && !e.read && e.fromAI).length;
             
             const inboxCount = document.getElementById('inboxCount');
             const aiCount = document.getElementById('aiCount');
             
-            inboxCount.textContent = inboxUnread;
-            inboxCount.style.display = inboxUnread > 0 ? 'inline' : 'none';
+            if (inboxCount) {
+                inboxCount.textContent = inboxUnread;
+                inboxCount.style.display = inboxUnread > 0 ? 'inline' : 'none';
+            }
             
-            aiCount.textContent = aiUnread;
-            aiCount.style.display = aiUnread > 0 ? 'inline' : 'none';
+            if (aiCount) {
+                aiCount.textContent = aiUnread;
+                aiCount.style.display = aiUnread > 0 ? 'inline' : 'none';
+            }
         }
 
         function formatEmailTime(timestamp) {
