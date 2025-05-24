@@ -18,7 +18,7 @@
             max-width: 1200px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 350px 1fr;
             gap: 20px;
         }
         
@@ -40,13 +40,13 @@
         }
         
         .click-button {
-            width: 200px;
-            height: 200px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             border: none;
             color: white;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             margin: 20px;
@@ -443,7 +443,7 @@
 <body>
     <div class="container">
         <div class="main-game">
-            <h1>🧠 Stimulation Clicker</h1>
+            <h1> Stimulation Clicker</h1>
             <div class="stats">
                 <div>Stimulation Points: <span id="points">0</span></div>
                 <div>Points per Click: <span id="perClick">1</span></div>
@@ -456,36 +456,36 @@
         </div>
         
         <div class="sidebar">
-            <h3>🛒 Upgrades</h3>
+            <h3> Upgrades</h3>
             <div id="upgrades"></div>
             
             <div class="email-section" id="emailSection">
                 <div class="email-header">
-                    <h3>📧 Stimulation Mail</h3>
-                    <button onclick="openCompose()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">✏️ Compose</button>
+                    <h3> Stimulation Mail</h3>
+                    <button onclick="openCompose()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;"> Compose</button>
                 </div>
                 
                 <div class="email-toolbar">
                     <input type="text" class="email-search" placeholder="Search mail..." id="emailSearch" oninput="searchEmails()">
                     <button onclick="markAllRead()">Mark all read</button>
-                    <button onclick="refreshEmails()">🔄 Refresh</button>
+                    <button onclick="refreshEmails()"> Refresh</button>
                 </div>
                 
                 <div class="email-layout">
                     <div class="email-sidebar">
                         <div class="email-folder active" data-folder="inbox" onclick="selectFolder('inbox')">
-                            📥 Inbox
+                            Inbox
                             <span class="unread-count" id="inboxCount">0</span>
                         </div>
                         <div class="email-folder" data-folder="sent" onclick="selectFolder('sent')">
-                            📤 Sent
+                            Sent
                         </div>
                         <div class="email-folder" data-folder="ai" onclick="selectFolder('ai')">
-                            🤖 AI Messages
+                            AI Messages
                             <span class="unread-count" id="aiCount">0</span>
                         </div>
                         <div class="email-folder" data-folder="spam" onclick="selectFolder('spam')">
-                            🗑️ Spam
+                            Spam
                         </div>
                     </div>
                     
@@ -505,9 +505,9 @@
                             </div>
                             <div class="email-view-content" id="viewContent"></div>
                             <div class="email-view-actions">
-                                <button class="btn-secondary" onclick="replyToEmail()">↩️ Reply</button>
-                                <button class="btn-secondary" onclick="deleteEmail()">🗑️ Delete</button>
-                                <button class="btn-secondary" onclick="closeEmailView()">← Back to list</button>
+                                <button class="btn-secondary" onclick="replyToEmail()"> Reply</button>
+                                <button class="btn-secondary" onclick="deleteEmail()"> Delete</button>
+                                <button class="btn-secondary" onclick="closeEmailView()"> Back to list</button>
                             </div>
                         </div>
                     </div>
@@ -543,7 +543,7 @@
             </div>
             
             <div class="players-list">
-                <h3>👥 Online Players</h3>
+                <h3> Online Players</h3>
                 <div id="playersList"></div>
             </div>
         </div>
@@ -572,7 +572,7 @@
         const upgradeDefinitions = [
             {
                 id: 'clickPower',
-                name: '💪 Click Power',
+                name: ' Click Power',
                 description: 'Increases click power',
                 baseCost: 10,
                 costMultiplier: 1.5,
@@ -580,7 +580,7 @@
             },
             {
                 id: 'autoClicker',
-                name: '🤖 Auto Clicker',
+                name: ' Auto Clicker',
                 description: 'Automatically clicks for you',
                 baseCost: 50,
                 costMultiplier: 2,
@@ -588,7 +588,7 @@
             },
             {
                 id: 'stimulationBoost',
-                name: '⚡ Stimulation Boost',
+                name: ' Stimulation Boost',
                 description: 'AI-powered stimulation enhancement',
                 baseCost: 100,
                 costMultiplier: 2.5,
@@ -601,7 +601,7 @@
             },
             {
                 id: 'email',
-                name: '📧 Email System',
+                name: ' Email System',
                 description: 'Unlock email communication with other players and AI entities',
                 baseCost: 200,
                 costMultiplier: 1,
@@ -614,7 +614,7 @@
             },
             {
                 id: 'socialNetwork',
-                name: '🌐 Social Network',
+                name: ' Social Network',
                 description: 'Connect with AI influencers and thought leaders',
                 baseCost: 500,
                 costMultiplier: 3,
@@ -827,7 +827,7 @@
         function startEmailSystem() {
             // Send welcome email from AI
             setTimeout(() => {
-                receiveEmail("Dr. Stimulation", "Welcome to Stimulation Mail! 🎉", 
+                receiveEmail("Dr. Stimulation", "Welcome to Stimulation Mail! ",
                     "Welcome to the Email System!\n\nI'm Dr. Stimulation, your AI assistant. I'll be sending you tips and updates to help maximize your stimulation potential!\n\nTry sending me a message by typing 'AI' in the recipient field.\n\nBest regards,\nDr. Stimulation", true);
             }, 1000);
             
@@ -887,10 +887,10 @@
                 }
                 
                 closeCompose();
-                showFloatingText('✅ Email sent!');
+                showFloatingText(' Email sent!');
             } catch (error) {
                 console.error('Error sending email:', error);
-                showFloatingText('❌ Failed to send email');
+                showFloatingText(' Failed to send email');
             }
         }
 
@@ -935,7 +935,7 @@
             updateEmailCounts();
             
             // Show notification
-            showFloatingText(`📧 New email: ${subject}`);
+            showFloatingText(` New email: ${subject}`);
         }
 
         function selectFolder(folder) {
@@ -980,7 +980,7 @@
                 emailElement.className = `email-item ${email.read ? 'read' : 'unread'}`;
                 emailElement.onclick = () => openEmail(email);
                 
-                const avatar = email.fromAI ? '🤖' : email.from.charAt(0).toUpperCase();
+                const avatar = email.fromAI ? '' : email.from.charAt(0).toUpperCase();
                 const preview = email.content.length > 50 ? email.content.substring(0, 50) + '...' : email.content;
                 
                 emailElement.innerHTML = `
@@ -1012,7 +1012,7 @@
             document.getElementById('viewSender').textContent = email.from;
             document.getElementById('viewTime').textContent = new Date(email.timestamp).toLocaleString();
             document.getElementById('viewContent').textContent = email.content;
-            document.getElementById('viewAvatar').textContent = email.fromAI ? '🤖' : email.from.charAt(0).toUpperCase();
+            document.getElementById('viewAvatar').textContent = email.fromAI ? '' : email.from.charAt(0).toUpperCase();
             
             updateEmailCounts();
             renderEmails();
@@ -1045,7 +1045,7 @@
             closeEmailView();
             renderEmails();
             updateEmailCounts();
-            showFloatingText('🗑️ Email deleted');
+            showFloatingText(' Email deleted');
         }
 
         function searchEmails() {
@@ -1062,7 +1062,7 @@
         function refreshEmails() {
             renderEmails();
             updateEmailCounts();
-            showFloatingText('📧 Refreshed');
+            showFloatingText(' Refreshed');
         }
 
         function updateEmailCounts() {
@@ -1140,7 +1140,7 @@
                 console.error('Random AI email failed:', error);
                 // Fallback message if AI fails
                 if (Math.random() < 0.5) {
-                    receiveEmail("System Bot", "Stimulation Tips", "Keep clicking! Your stimulation levels are looking great! 🚀", true);
+                    receiveEmail("System Bot", "Stimulation Tips", "Keep clicking! Your stimulation levels are looking great! ", true);
                 }
             }
         }
